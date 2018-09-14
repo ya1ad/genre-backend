@@ -36,7 +36,7 @@ app.get("/api/genres/", (req, res) => {
  * GET genre of specific id
  */
 
-app.get("/api/genre/:id", (req, res) => {
+app.get("/api/genres/:id", (req, res) => {
   const get_genre = find_genre(req.params.id);
   if (!get_genre) res.status(404).send("Genre not found.");
   res.send(get_genre);
@@ -58,6 +58,21 @@ app.post("/api/genres/", (req, res) => {
     name: req.body.name
   };
   dummy_genre.push(temp_genre);
+  res.send(dummy_genre);
+});
+
+app.put("/api/genres/:id", (req, res) => {
+  const get_genre = find_genre(req.params.id);
+  if (!get_genre) res.status(404).send("Genre not found.");
+
+  const { error } = nameValidate(req.body);
+
+  if (error) {
+    res.status(400).send(error.details[0].message);
+    return;
+  }
+
+  get_genre.name = req.body.name;
   res.send(dummy_genre);
 });
 
