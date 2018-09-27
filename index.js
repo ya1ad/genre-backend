@@ -1,97 +1,37 @@
 const express = require("express");
-const Joi = require("joi");
+const mongoose = require("mongoose");
+const config = require("config");
 const app = express();
 
+const genres = require("./routes/genres");
+const customer = require("./routes/customers");
+const movie = require("./routes/movies");
+const rentals = require("./routes/rentals");
+const user = require("./routes/users");
+const auth = require("./routes/auth");
+
 app.use(express.json());
-
+app.use("/api/rentals", rentals);
+app.use("/api/genres", genres);
+app.use("/api/customers", customer);
+app.use("/api/movies", movie);
+app.use("/api/users", user);
+app.use("/api/auth", auth);
+console.log(config.get("jwtPrivateKey"));
+if (!config.get("jwtPrivateKey")) {
+  console.log("FATAL ERROR: jwt private key not defined");
+  process.exit(1);
+}
 /**
- * Creating Dummy genre
+ * Database Connection
  */
-
-const dummy_genre = [
-  {
-    id: 1,
-    name: "fiction"
-  },
-  {
-    id: 2,
-    name: "crime"
-  }
-];
+mongoose
+  .connect("mongodb://localhost/movie")
+  .then(() => console.log("Connected!!"))
+  .catch(err => console.log("Error-----------", err));
 
 /**
  * PORT
  */
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log(`Listening on port ${port}`));
-
-/**
- * GET all genre
- */
-app.get("/api/genres/", (req, res) => {
-  res.send(dummy_genre);
-});
-
-/**
- * GET genre of specific id
- */
-
-app.get("/api/genres/:id", (req, res) => {
-  const get_genre = find_genre(req.params.id);
-  if (!get_genre) res.status(404).send("Genre not found.");
-  res.send(get_genre);
-});
-
-/**
- * POST /api/genres/
- */
-app.post("/api/genres/", (req, res) => {
-  const { error } = nameValidate(req.body);
-
-  if (error) {
-    res.status(400).send(error.details[0].message);
-    return;
-  }
-
-  const temp_genre = {
-    id: dummy_genre.length + 1,
-    name: req.body.name
-  };
-  dummy_genre.push(temp_genre);
-  res.send(dummy_genre);
-});
-
-app.put("/api/genres/:id", (req, res) => {
-  const get_genre = find_genre(req.params.id);
-  if (!get_genre) res.status(404).send("Genre not found.");
-
-  const { error } = nameValidate(req.body);
-
-  if (error) {
-    res.status(400).send(error.details[0].message);
-    return;
-  }
-
-  get_genre.name = req.body.name;
-  res.send(dummy_genre);
-});
-
-/**
- * Check genre exist or not
- */
-function find_genre(id) {
-  return dummy_genre.find(g => g.id === parseInt(id));
-}
-
-/**
- * Name Validation
- */
-function nameValidate(genre_name) {
-  const schema = {
-    name: Joi.string()
-      .min(3)
-      .required()
-  };
-
-  return Joi.validate(genre_name, schema);
-}
